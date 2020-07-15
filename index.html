@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Misc by jkumagai96</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Misc</h1>
+      <h2 class="project-tagline"></h2>
+      <a href="https://github.com/jkumagai96/Misc" class="btn">View on GitHub</a>
+      <a href="https://github.com/jkumagai96/Misc/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/jkumagai96/Misc/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="technical-guidelines-series---part-1" class="anchor" href="#technical-guidelines-series---part-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Technical Guidelines Series - Part 1**</h1>
+<p><strong>Prepared by Joy Kumagai - Technical Support Unit of Knowledge and Data</strong><br>
+<strong>Reviewed by Aidin Niamir - Head of the Technical Support Unit of Knowledge and Data</strong><br>
+9 July 2020</p>
+<h2>
+<a id="1-conversion-to-the-robinson-projection" class="anchor" href="#1-conversion-to-the-robinson-projection" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><strong>1. Conversion to the Robinson Projection</strong>
+</h2>
+<p>The guide will show how to convert raster and vector data from a projection to the Robinson projection using R. Please note that whether one would like to display a Pacific centered or Greenwich centered map depends on the application.</p>
+<p>Begin by loading the following packages.</p>
+<pre lang="{r"><code>library(raster)
+library(graticule)
+library(rgdal)
+library(rworldmap)
+</code></pre>
+<p>Next, we define the Robinson projection using PROJ.4 notation. This information can be found at the <a href="https://epsg.io/54030">this link</a>.</p>
+<pre lang="{r}"><code>crs_robin &lt;- CRS("+proj=robin +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs") 
+</code></pre>
+<h3>
+<a id="11-raster-data" class="anchor" href="#11-raster-data" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.1 Raster Data</h3>
+<p>To produce a Greenwich centered map in the Robinson projection with raster data, we generate a random raster and plot the result, but please load and use the raster data that you will be working with. The crs() function will output the projection that your data is in.</p>
+<pre lang="{r"><code>r &lt;- raster(nrows=180, ncols=360, xmn=-180, xmx=180,ymn=-90, ymx=90,res = 1) # This is the raster
+r &lt;- setValues(r,runif(ncell(r))) # Fill the raster with random values 
+crs(r) &lt;- "+proj=longlat +datum=WGS84 +no_defs" # Define the original projection of the raster (WGS 1984)
+crs(r)
+plot(r) # Plot the raster 
+</code></pre>
+<p>Now we will convert this raster to the Robinson projection and plot the result with longitude and latitude lines.</p>
+<pre lang="{r,"><code>r &lt;- projectRaster(r, crs=crs_robin, over = TRUE) # project to Robinson
+
+plot(r,axes = F,legend=F) #Plot the raster
+
+lat &lt;- c(-90, -60, -30, 0, 30, 60, 90)
+lon &lt;- c(-180, -120, -60, 0, 60, 120, 180)
+llgridlines(as(r, "SpatialPoints"), easts = lon, norths = lat,cex=0.5) # Add graticules to map 
+</code></pre>
+<h3>
+<a id="12-vector-data" class="anchor" href="#12-vector-data" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.2 Vector Data</h3>
+<p>In this section, we will produce a world map of countries with vector data (points, lines, polygons).
+First, we will load, check the projection, and plot a world map of countries.</p>
+<pre lang="{r}"><code>worldmap &lt;- getMap(resolution = "coarse") # Load world map - countries 
+crs(worldmap)
+plot(worldmap) # Plot world map 
+</code></pre>
+<p>Now, we project the vector data into the Robinson projection and plot the map.</p>
+<pre lang="{r,"><code>worldmap&lt;-spTransform(worldmap,crs_robin) # Project to Robinson 
+
+plot(worldmap) # Plot world map (vector)
+
+lat &lt;- c(-90, -60, -30, 0, 30, 60, 90)
+lon &lt;- c(-180, -120, -60, 0, 60, 120, 180)
+llgridlines(as(r, "SpatialPoints"), easts = lon, norths = lat,cex=0.5) # Add graticules 
+</code></pre>
+<h3>
+<a id="13-combine-vector-and-raster" class="anchor" href="#13-combine-vector-and-raster" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.3 Combine Vector and Raster</h3>
+<p>Finally, we will visualize both the raster and vector data together in one map.</p>
+<pre lang="{r,"><code>## Vector &amp; Raster
+plot(r,axes = F,legend=F) # Plot the raster
+plot(worldmap,add=T) # Plot the vector data 
+llgridlines(as(r, "SpatialPoints"), easts = lon, norths = lat,cex=0.5)
+</code></pre>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/jkumagai96/Misc">Misc</a> is maintained by <a href="https://github.com/jkumagai96">jkumagai96</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
